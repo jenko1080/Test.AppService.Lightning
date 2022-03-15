@@ -31,3 +31,4 @@ dotnet user-secrets set "Lightning:AuthString" "<LightningAuthString>"
 ```
 
 - Note: Auth String expects the format of `WZLSF:CLIENTID:FORMAT:END`, ensure you use `JSON` as the format.
+- Note: If doing local development, install `Azurite` and set StorageTable connection string to `UseDevelopmentStorage=true`
