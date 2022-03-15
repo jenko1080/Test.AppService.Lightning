@@ -49,18 +49,17 @@ namespace Test.AppService.Lightning.API.Services
             catch (RequestFailedException e)
             {
                 _logger.LogError($"Error adding to table: {e.Message}");
-                return false;
             }
             catch (KeyNotFoundException)
             {
                 _logger.LogError($"No table mapping available for type {typeof(T).Name}");
-                return false;
             }
             catch (RowAndPartitionKeyNotImplementedException)
             {
                 _logger.LogError($"Row and partition key not implemented for type {typeof(T).Name}");
-                return false;
             }
+
+            return false;
         }
     }
 }

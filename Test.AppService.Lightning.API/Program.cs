@@ -1,4 +1,5 @@
 using Azure.Data.Tables;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging.AzureAppServices;
 using Test.AppService.Lightning.API.Services;
 using Test.AppService.Lightning.API.Services.Interfaces;
@@ -31,9 +32,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Get connection strings from storage
+var serviceBusConnectionString = builder.Configuration.GetConnectionString("ServiceBus");
+var storageConnectionString = builder.Configuration.GetConnectionString("StorageTable");
+
+// Set up the Table Service and Service Bus client services
+builder.Services.AddAzureClients(builder =>
+{
+    builder.AddServiceBusClient(serviceBusConnectionString);
+    builder.AddTableServiceClient(storageConnectionString);
+});
+
+// Set up Service Bus service
+builder.Services.AddSingleton<ITopicService, TopicService>();
+
 // Set up table service
-var connectionString = builder.Configuration.GetConnectionString("StorageTable");
-builder.Services.AddSingleton<TableServiceClient>(new TableServiceClient(connectionString));
 builder.Services.AddSingleton<ITablesService, TablesService>();
 
 // Add lightning services

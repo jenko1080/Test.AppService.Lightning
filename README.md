@@ -28,6 +28,7 @@ dotnet user-secrets set "ConnectionStrings:StorageTable" "<StorageConnectionStri
 dotnet user-secrets set "Lightning:Uri" "<LightningUri>"
 dotnet user-secrets set "Lightning:Port" "<LightningPort>"
 dotnet user-secrets set "Lightning:AuthString" "<LightningAuthString>"
+dotnet user-secrets set "ConnectionStrings:ServiceBus" "<ServiceBusConnectionString>"
 ```
 
 - Note: Auth String expects the format of `WZLSF:CLIENTID:FORMAT:END`, ensure you use `JSON` as the format.

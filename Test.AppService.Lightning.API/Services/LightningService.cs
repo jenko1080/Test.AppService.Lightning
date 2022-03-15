@@ -10,12 +10,14 @@ namespace Test.AppService.Lightning.API.Services
     {
         private readonly ILogger<LightningService> _logger;
         private readonly ITablesService _tablesService;
+        private readonly ITopicService _topicService;
 
         // Ctor
-        public LightningService(ILogger<LightningService> logger, ITablesService tablesService)
+        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService)
         {
             _logger = logger;
             _tablesService = tablesService;
+            _topicService = topicService;
         }
 
         // Handle JSON lightning stroke
@@ -55,6 +57,8 @@ namespace Test.AppService.Lightning.API.Services
                 // Save to table
                 if(IsInVictoriaBoundingBox(lightningStroke))
                 {
+                    //await _topicService.AddLightningMessage(lightningStroke);
+
                     if (await _tablesService.AddToTable(lightningStroke))
                     {
                         _logger.LogDebug($"Lightning added to table");
