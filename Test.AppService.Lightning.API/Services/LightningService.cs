@@ -53,13 +53,20 @@ namespace Test.AppService.Lightning.API.Services
                 }
                 
                 // Save to table
-                if (await _tablesService.AddToTable(lightningStroke))
+                if(IsInVictoriaBoundingBox(lightningStroke))
                 {
-                    _logger.LogDebug($"Lightning added to table");
+                    if (await _tablesService.AddToTable(lightningStroke))
+                    {
+                        _logger.LogDebug($"Lightning added to table");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Lightning failed to add to table");
+                    }
                 }
                 else
                 {
-                    _logger.LogWarning("Lightning failed to add to table");
+                    _logger.LogDebug($"Lightning ignored due to bounding box: {lightningStroke.Latitude}, {lightningStroke.Longitude}");
                 }
             }
             catch (JsonException ex)
@@ -71,6 +78,14 @@ namespace Test.AppService.Lightning.API.Services
                 _logger.LogError(JsonSerializer.Serialize(lightning));
                 throw;
             }
+        }
+
+        private bool IsInVictoriaBoundingBox(LightningStrokeEntry l)
+        {
+            return l.Latitude > -43.6345972634 
+                && l.Latitude < -10.6681857235 
+                && l.Longitude > 113.338953078
+                && l.Longitude < 153.569469029 ? true : false;
         }
 
     }
