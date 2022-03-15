@@ -76,7 +76,7 @@ namespace Test.AppService.Lightning.API.Services
 
                 if(_stopWatch.ElapsedMilliseconds > _tcpLineCountMs)
                 {
-                    _logger.LogInformation($"TCP Line Count in the last {_stopWatch.ElapsedMilliseconds} ms: {lineCount}. Buffer Size: {client.ToString}.");
+                    _logger.LogInformation($"TCP Line Count in the last {_stopWatch.ElapsedMilliseconds} ms: {lineCount}.");
                     _stopWatch.Restart();
                     lineCount = 0;
                 }
