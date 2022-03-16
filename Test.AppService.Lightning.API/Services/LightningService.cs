@@ -58,6 +58,7 @@ namespace Test.AppService.Lightning.API.Services
                 if(IsInVictoriaBoundingBox(lightningStroke))
                 {
                     //await _topicService.AddLightningMessage(lightningStroke);
+                    _logger.LogDebug("Lightning stroke is in Victoria bounding box: {lat}, {lon}", lightningStroke.Latitude, lightningStroke.Longitude);
 
                     if (await _tablesService.AddToTable(lightningStroke))
                     {
@@ -86,10 +87,10 @@ namespace Test.AppService.Lightning.API.Services
 
         private bool IsInVictoriaBoundingBox(LightningStrokeEntry l)
         {
-            return l.Latitude > -43.6345972634 
-                && l.Latitude < -10.6681857235 
-                && l.Longitude > 113.338953078
-                && l.Longitude < 153.569469029 ? true : false;
+            return l.Latitude > -39.25
+                && l.Latitude < -33.75
+                && l.Longitude > 140.0
+                && l.Longitude < 150.0 ? true : false;
         }
 
     }
