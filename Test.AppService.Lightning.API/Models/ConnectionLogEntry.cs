@@ -8,6 +8,8 @@ namespace Test.AppService.Lightning.API.Models
 
         public string? UpdateMessage { get; set; }
 
+        public int? Number { get; set; }
+
         public override void SetRowAndPartitionKeys()
         {
             PartitionKey = DateTimeUtc.ToString("yyyy-MM-dd");

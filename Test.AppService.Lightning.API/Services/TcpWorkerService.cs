@@ -9,7 +9,7 @@ namespace Test.AppService.Lightning.API.Services
     // Create Background Service to listen to TCP messages
     public class TcpWorkerService : ITcpWorkerService
     {
-        private const int _tcpLineCountMs = 10000;
+        private const int _tcpLineCountMs = 60000; // 1 minute
 
         private readonly ILogger<TcpWorkerService> _logger;
         private readonly ITablesService _tablesService;
@@ -76,7 +76,9 @@ namespace Test.AppService.Lightning.API.Services
 
                 if(_stopWatch.ElapsedMilliseconds > _tcpLineCountMs)
                 {
+                    _stopWatch.Stop();
                     _logger.LogInformation($"TCP Line Count in the last {_stopWatch.ElapsedMilliseconds} ms: {lineCount}.");
+                    _ = AddConnectionLogUpdate(lineCount, _stopWatch.ElapsedMilliseconds);
                     _stopWatch.Restart();
                     lineCount = 0;
                 }
@@ -120,6 +122,20 @@ namespace Test.AppService.Lightning.API.Services
                 DateTimeUtc = DateTime.UtcNow,
                 NewStatus = ConnectionUpdateStatus.Disconnected,
                 UpdateMessage = message
+            };
+
+            _ = await _tablesService.AddToTable(connectionLogEntry);
+        }
+
+        // Metrics
+        private async Task AddConnectionLogUpdate(int numLines, long time)
+        {
+            var connectionLogEntry = new ConnectionLogEntry
+            {
+                DateTimeUtc = DateTime.UtcNow,
+                NewStatus = ConnectionUpdateStatus.Update,
+                UpdateMessage = $"Number of TCP lines parsed in the last {time} ms",
+                Number = numLines
             };
 
             _ = await _tablesService.AddToTable(connectionLogEntry);
