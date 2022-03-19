@@ -71,7 +71,7 @@ namespace Test.AppService.Lightning.API.Services
 
                 var line = reader.ReadLine();
 
-                // Confirm with first recieved packed that we're good to go
+                // Confirm with first received packed that we're good to go
                 if (!string.IsNullOrWhiteSpace(line) && _lightningService.IsConnectionMessage(line))
                 {
                     // Log the success
@@ -85,7 +85,7 @@ namespace Test.AppService.Lightning.API.Services
                         // Read each new TCP line
                         line = reader.ReadLine();
                         lineCount++;
-                        _logger.LogDebug($"TCP Line Recieved: {line}");
+                        _logger.LogDebug($"TCP Line Received: {line}");
 
                         // Throw incoming data to LightningService to deal with
                         if (!string.IsNullOrWhiteSpace(line))

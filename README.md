@@ -12,11 +12,13 @@
 ### Requirements
 
 1. Storage Account Table
-   - Tables will be created as requested, at the time of writing `LightningStrokes` and `ConnectionLog`
+   - Tables will be created as requested, at the time of writing `LightningStrokes`, `ConnectionLog` and `WarmupLog`
    - Defined in `Services/TablesService.cs`
-1. Service Bus
-   1. Topic: `lightning`
-   1. Subscription: `lightning-map`
+1. Web PubSub Service
+   - *NOTE*: Only Available in Australia East (Not South East)
+1. ~~Service Bus (Replaced with PubSub... for now)~~
+   1. ~~Topic: `lightning`~~
+   1. ~~Subscription: `lightning-map`~~
 
 ### User Secrets
 
@@ -28,8 +30,15 @@ dotnet user-secrets set "ConnectionStrings:StorageTable" "<StorageConnectionStri
 dotnet user-secrets set "Lightning:Uri" "<LightningUri>"
 dotnet user-secrets set "Lightning:Port" "<LightningPort>"
 dotnet user-secrets set "Lightning:AuthString" "<LightningAuthString>"
+dotnet user-secrets set "ConnectionStrings:PubSub" "<PubSubConnectionString>"
+
 dotnet user-secrets set "ConnectionStrings:ServiceBus" "<ServiceBusConnectionString>"
 ```
 
 - Note: Auth String expects the format of `WZLSF:CLIENTID:FORMAT:END`, ensure you use `JSON` as the format.
 - Note: If doing local development, install `Azurite` and set StorageTable connection string to `UseDevelopmentStorage=true`
+
+## Future TODO
+
+- Update the PubSub implementation to send data every ?ms (batching)
+- Update the Service Bus implementation to send data every ?ms (batching)

@@ -11,13 +11,15 @@ namespace Test.AppService.Lightning.API.Services
         private readonly ILogger<LightningService> _logger;
         private readonly ITablesService _tablesService;
         private readonly ITopicService _topicService;
+        private readonly IPubSubService _pubSubService;
 
         // Ctor
-        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService)
+        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService, IPubSubService pubSubService)
         {
             _logger = logger;
             _tablesService = tablesService;
             _topicService = topicService;
+            _pubSubService = pubSubService;
         }
 
         // Handle JSON lightning stroke
@@ -39,6 +41,10 @@ namespace Test.AppService.Lightning.API.Services
                 if (lightningStroke.Type == LightningStrokeType.KA)
                 {
                     _logger.LogInformation("Lightning feed KeepAlive message recieved");
+
+                    // Add to PubSub
+                    await _pubSubService.PublishMessageAsync(JsonSerializer.Serialize(lightningStroke));
+
                     return;
                 }
 
@@ -48,6 +54,10 @@ namespace Test.AppService.Lightning.API.Services
                     //await _topicService.AddLightningMessage(lightningStroke);
                     _logger.LogDebug("Lightning stroke is in Victoria bounding box: {lat}, {lon}", lightningStroke.Latitude, lightningStroke.Longitude);
 
+                    // Add to PubSub
+                    await _pubSubService.PublishMessageAsync(JsonSerializer.Serialize(lightningStroke));
+
+                    // Log to long term table
                     if (await _tablesService.AddToTable(lightningStroke))
                     {
                         _logger.LogDebug($"Lightning added to table");
