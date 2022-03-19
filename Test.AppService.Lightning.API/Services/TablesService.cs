@@ -15,7 +15,8 @@ namespace Test.AppService.Lightning.API.Services
         private static readonly Dictionary<string, string> _modelToTableName = new Dictionary<string, string>()
         {
             { nameof(LightningStrokeEntry), "LightningStrokes" },
-            { nameof(ConnectionLogEntry), "ConnectionLog" }
+            { nameof(ConnectionLogEntry), "ConnectionLog" },
+            { nameof(WarmupEntry), "WarmupLog" }
         };
 
         // Ctor

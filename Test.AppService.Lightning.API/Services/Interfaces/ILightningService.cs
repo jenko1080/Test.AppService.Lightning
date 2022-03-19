@@ -3,5 +3,7 @@
     public interface ILightningService
     {
         Task HandleLightningJson(string lightning);
+
+        bool IsConnectionMessage(string lightning);
     }
 }

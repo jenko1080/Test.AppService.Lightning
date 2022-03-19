@@ -1,4 +1,3 @@
-using Azure.Data.Tables;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging.AzureAppServices;
 using Test.AppService.Lightning.API.Services;
@@ -52,6 +51,7 @@ builder.Services.AddSingleton<ITablesService, TablesService>();
 // Add lightning services
 builder.Services.AddSingleton<ILightningService, LightningService>();
 builder.Services.AddSingleton<ITcpWorkerService, TcpWorkerService>();
+builder.Services.AddSingleton<IWarmupService, WarmupService>();
 
 // Add background service
 builder.Services.AddHostedService<TcpBackgroundService>();

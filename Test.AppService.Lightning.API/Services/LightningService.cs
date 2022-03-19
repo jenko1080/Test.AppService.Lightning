@@ -27,13 +27,7 @@ namespace Test.AppService.Lightning.API.Services
             // Parse JSON
             try
             {
-                lightning = lightning.TrimEnd(';');
-
-                JsonSerializerOptions options = new JsonSerializerOptions();
-                options.Converters.Add(new DateTimeConverter());
-                options.Converters.Add(new JsonStringEnumConverter());
-
-                var lightningStroke = JsonSerializer.Deserialize<LightningStrokeEntry>(lightning, options);
+                var lightningStroke = DeserialiseLightning(lightning);
 
                 if (lightningStroke == null)
                 {
@@ -42,20 +36,14 @@ namespace Test.AppService.Lightning.API.Services
                 }
 
                 // If KeepAlive is recieved, log it
-                if(lightningStroke.Type == LightningStrokeType.KA)
+                if (lightningStroke.Type == LightningStrokeType.KA)
                 {
                     _logger.LogInformation("Lightning feed KeepAlive message recieved");
                     return;
                 }
 
-                // Ignore JH messages
-                if(lightningStroke.Type == LightningStrokeType.JH)
-                {
-                    return;
-                }
-                
                 // Save to table
-                if(IsInVictoriaBoundingBox(lightningStroke))
+                if (IsInVictoriaBoundingBox(lightningStroke))
                 {
                     //await _topicService.AddLightningMessage(lightningStroke);
                     _logger.LogDebug("Lightning stroke is in Victoria bounding box: {lat}, {lon}", lightningStroke.Latitude, lightningStroke.Longitude);
@@ -78,11 +66,36 @@ namespace Test.AppService.Lightning.API.Services
             {
                 _logger.LogError($"Json Deserialize failed: {ex.ToString} {ex.Message}");
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 _logger.LogError(JsonSerializer.Serialize(lightning));
                 throw;
             }
+        }
+
+        public bool IsConnectionMessage(string lightning)
+        {
+            var lightningStroke = DeserialiseLightning(lightning);
+            
+            // Ignore JH messages
+            if(lightningStroke?.Type == LightningStrokeType.JH)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static LightningStrokeEntry? DeserialiseLightning(string lightning)
+        {
+            lightning = lightning.TrimEnd(';');
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.Converters.Add(new DateTimeConverter());
+            options.Converters.Add(new JsonStringEnumConverter());
+
+            var lightningStroke = JsonSerializer.Deserialize<LightningStrokeEntry>(lightning, options);
+            return lightningStroke;
         }
 
         private bool IsInVictoriaBoundingBox(LightningStrokeEntry l)

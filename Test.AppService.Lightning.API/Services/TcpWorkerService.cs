@@ -9,8 +9,10 @@ namespace Test.AppService.Lightning.API.Services
     // Create Background Service to listen to TCP messages
     public class TcpWorkerService : ITcpWorkerService
     {
-        private const int _tcpLineCountMs = 60000; // 1 minute
+        private const int _tcpLineCountMs = 600000; // 10 minutes
 
+        private bool IsConnected = false;
+        private bool _shouldContinue = false;
         private readonly ILogger<TcpWorkerService> _logger;
         private readonly ITablesService _tablesService;
         private readonly ILightningService _lightningService;
@@ -25,6 +27,8 @@ namespace Test.AppService.Lightning.API.Services
             _configuration = configuration;
 
             _stopWatch = new Stopwatch();
+
+            bool.TryParse(_configuration["Experiments:ShouldContinue"], out _shouldContinue);
         }
 
         public async Task ListenTcp(CancellationToken stoppingToken)
@@ -33,6 +37,15 @@ namespace Test.AppService.Lightning.API.Services
             var lightningPort = int.Parse(_configuration["Lightning:Port"]);
             var lightningAuthString = _configuration["Lightning:AuthString"];
 
+            if(_shouldContinue == false)
+            {
+                _logger.LogWarning("Holding lightning feed startup until _shouldContinue var is set to true... probably use `/warmup/continue` endpoint.");
+                while (_shouldContinue == false)
+                {
+                    await Task.Delay(1000);
+                }
+            }
+
             _logger.LogInformation($"Connecting to Lightning Feed on TCP: {lightningUri}:{lightningPort}");
 
             // Create a TCP client
@@ -40,7 +53,7 @@ namespace Test.AppService.Lightning.API.Services
             await client.ConnectAsync(lightningUri, lightningPort);
 
             // Create a stream for the TCP connection
-            using NetworkStream networkStream = client.GetStream();
+            using var networkStream = client.GetStream();
 
             _logger.LogInformation($"Connected to Lightning Feed, attempting to authorise");
 
@@ -53,35 +66,53 @@ namespace Test.AppService.Lightning.API.Services
             // Log new connection
             if (networkStream.Socket.Connected)
             {
-                await AddConnectionLogConnect("Connected and authorised.");
-            }
+                // Start Listening
+                using var reader = new StreamReader(networkStream, Encoding.UTF8);
 
-            // Start Listening
-            using var reader = new StreamReader(networkStream, Encoding.UTF8);
-            _stopWatch.Start();
-            var lineCount = 0;
-            while (!stoppingToken.IsCancellationRequested && networkStream.Socket.Connected)
-            {
-                // Read each new TCP line
                 var line = reader.ReadLine();
-                lineCount++;
-                _logger.LogDebug($"TCP Line Recieved: {line}");
 
-                // Throw incoming data to LightningService to deal with
-                if (!string.IsNullOrWhiteSpace(line))
+                // Confirm with first recieved packed that we're good to go
+                if (!string.IsNullOrWhiteSpace(line) && _lightningService.IsConnectionMessage(line))
                 {
-                    // Note: Do not await, drops rate from ~400 to ~22 during testing
-                    _ = _lightningService.HandleLightningJson(line);
-                }
+                    // Log the success
+                    await AddConnectionLog(ConnectionUpdateStatus.Connected, "Connected and authorised.");
+                    IsConnected = true;
 
-                if(_stopWatch.ElapsedMilliseconds > _tcpLineCountMs)
-                {
-                    _stopWatch.Stop();
-                    _logger.LogInformation($"TCP Line Count in the last {_stopWatch.ElapsedMilliseconds} ms: {lineCount}.");
-                    _ = AddConnectionLogUpdate(lineCount, _stopWatch.ElapsedMilliseconds);
-                    _stopWatch.Restart();
-                    lineCount = 0;
+                    _stopWatch.Start();
+                    var lineCount = 0;
+                    while (!stoppingToken.IsCancellationRequested && networkStream.Socket.Connected)
+                    {
+                        // Read each new TCP line
+                        line = reader.ReadLine();
+                        lineCount++;
+                        _logger.LogDebug($"TCP Line Recieved: {line}");
+
+                        // Throw incoming data to LightningService to deal with
+                        if (!string.IsNullOrWhiteSpace(line))
+                        {
+                            // Note: Do not await, drops rate from ~400 to ~22 during testing
+                            _ = _lightningService.HandleLightningJson(line);
+                        }
+
+                        if (_stopWatch.ElapsedMilliseconds > _tcpLineCountMs)
+                        {
+                            _stopWatch.Stop();
+                            _logger.LogInformation($"TCP Line Count in the last {_stopWatch.ElapsedMilliseconds} ms: {lineCount}.");
+                            _ = AddConnectionLogUpdate(lineCount, _stopWatch.ElapsedMilliseconds);
+                            _stopWatch.Restart();
+                            lineCount = 0;
+                        }
+                    }
                 }
+                else
+                {
+                    await AddConnectionLog(ConnectionUpdateStatus.Failed, "Failed to authorise.");
+                }
+            }
+            else
+            {
+                // Log the failure
+                await AddConnectionLog(ConnectionUpdateStatus.Failed, "Failed to connect.");
             }
 
             // Cancellation requested, clean up
@@ -89,38 +120,32 @@ namespace Test.AppService.Lightning.API.Services
             {
                 _logger.LogWarning("Cancellation requested, closing connections");
                 networkStream.Close();
-                await AddConnectionLogDisconnect("Cancellation requested.");
+                await AddConnectionLog(ConnectionUpdateStatus.Disconnected, "Cancellation requested.");
 
             }
             else if (!networkStream.Socket.Connected)
             {
                 _logger.LogWarning("Unexpected socket close, cleaning up.");
-                await AddConnectionLogDisconnect("Unexpected socket disconnection.");
+                await AddConnectionLog(ConnectionUpdateStatus.Disconnected, "Unexpected socket disconnection.");
             }
+
+            IsConnected = false;
 
             _logger.LogWarning("TCP Worker completed.");
         }
 
-        // Connect Message
-        private async Task AddConnectionLogConnect(string message)
+        public bool IsWarm()
         {
-            var connectionLogEntry = new ConnectionLogEntry
-            {
-                DateTimeUtc = DateTime.UtcNow,
-                NewStatus = ConnectionUpdateStatus.Connected,
-                UpdateMessage = message
-            };
-
-            _ = await _tablesService.AddToTable(connectionLogEntry);
+            return IsConnected;
         }
 
-        // Disconnect Message
-        private async Task AddConnectionLogDisconnect(string message)
+        // Connect Message
+        private async Task AddConnectionLog(ConnectionUpdateStatus status, string message)
         {
             var connectionLogEntry = new ConnectionLogEntry
             {
                 DateTimeUtc = DateTime.UtcNow,
-                NewStatus = ConnectionUpdateStatus.Disconnected,
+                NewStatus = status,
                 UpdateMessage = message
             };
 
@@ -139,6 +164,20 @@ namespace Test.AppService.Lightning.API.Services
             };
 
             _ = await _tablesService.AddToTable(connectionLogEntry);
+        }
+
+        /// <summary>
+        /// Allows the startup to continue, simple flag to allow testing of App Service warm up
+        /// </summary>
+        /// <returns></returns>
+        public bool AllowContinue()
+        {
+            if(_shouldContinue == false)
+            {
+                _shouldContinue = true;
+                return true;
+            }
+            return false;
         }
     }
 }
