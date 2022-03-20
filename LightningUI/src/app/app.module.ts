@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { LightningMapComponent } from './lightning-map/lightning-map.component';
 
 import { LeafletModule } from '@asymmetrik/ngx-leaflet';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { LeafletModule } from '@asymmetrik/ngx-leaflet';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    LeafletModule
+    LeafletModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]
