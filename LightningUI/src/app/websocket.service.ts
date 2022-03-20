@@ -1,13 +1,31 @@
 import { Injectable } from "@angular/core";
-import { webSocket } from "rxjs/webSocket";
+import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { HttpClient } from '@angular/common/http';
+import { Observable, of, Subject } from "rxjs";
 
 @Injectable()
 export class WebSocketService {
-  clientAccessUri = "wss://tc-lightning.webpubsub.azure.com/client/hubs/stream?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjpbIndlYnB1YnN1Yi5qb2luTGVhdmVHcm91cC5zdHJlYW0iXSwibmJmIjoxNjQ3NzQ2ODIzLCJleHAiOjE2NDc3NTA0MjMsImlhdCI6MTY0Nzc0NjgyMywiYXVkIjoiaHR0cHM6Ly90Yy1saWdodG5pbmcud2VicHVic3ViLmF6dXJlLmNvbS9jbGllbnQvaHVicy9zdHJlYW0ifQ.ahK35a0uTKq0Z5jcE8egWemU3gpAbfepNkW4b6VQqgM";
+  private wsNegotiateUrl = "https://app-tc-lightning.azurewebsites.net/pubsub/negotiate";
+  private clientAccessUri = "";
 
-  private socket$  = webSocket(this.clientAccessUri);
-  public messages$ = this.socket$.asObservable();
+  // Socket status to allow watchers to re-subscribe when needed
+  private socketStatus = new Subject<string>();
+  public status$ = this.socketStatus.asObservable();
 
-  constructor(private http: HttpClient) { }
+  private socket$!: WebSocketSubject<any>;
+  public messages$: Observable<any> = of();
+  
+  constructor(private http: HttpClient) { 
+    this.http.get(this.wsNegotiateUrl).subscribe(
+      (data: any) => {
+        this.clientAccessUri = data.url.result;
+        this.socket$ = webSocket(this.clientAccessUri);
+        this.messages$ = this.socket$.asObservable();
+        this.socketStatus.next("connected");
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+  }
 }

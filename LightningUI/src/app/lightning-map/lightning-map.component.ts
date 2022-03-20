@@ -69,13 +69,18 @@ export class LightningMapComponent implements OnInit, OnDestroy {
   };
 
   constructor(private webSocketService: WebSocketService) {
-    this.webSocketService.messages$.subscribe((message: any) => {
-      if (message.st == 'KA') {
-        console.log('KA: ', message);
-      } else if (message.st === 'CG' || message.st === 'IC') {
-        this.addLightningStrike(message.lat, message.lon);
-      } else {
-        console.log('Unknown message: ', message);
+    this.webSocketService.status$.subscribe((status) => {
+      console.log('WebSocket status: ', status);
+      if (status === 'connected') {
+        this.webSocketService.messages$.subscribe((message) => {
+          if (message.st == 'KA') {
+            console.log('KA: ', message);
+          } else if (message.st === 'CG' || message.st === 'IC') {
+            this.addLightningStrike(message.lat, message.lon);
+          } else {
+            console.log('Unknown message: ', message);
+          }
+        });
       }
     });
   }

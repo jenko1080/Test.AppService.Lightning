@@ -12,14 +12,16 @@ namespace Test.AppService.Lightning.API.Services
         private readonly ITablesService _tablesService;
         private readonly ITopicService _topicService;
         private readonly IPubSubService _pubSubService;
+        private readonly IConfiguration _configuration;
 
         // Ctor
-        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService, IPubSubService pubSubService)
+        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService, IPubSubService pubSubService, IConfiguration configuration)
         {
             _logger = logger;
             _tablesService = tablesService;
             _topicService = topicService;
             _pubSubService = pubSubService;
+            _configuration = configuration;
         }
 
         // Handle JSON lightning stroke
@@ -56,7 +58,7 @@ namespace Test.AppService.Lightning.API.Services
                 }
 
                 // Save to table
-                if (IsInVictoriaBoundingBox(lightningStroke))
+                if (IsInBoundingBox(lightningStroke))
                 {
                     //await _topicService.AddLightningMessage(lightningStroke);
                     _logger.LogDebug("Lightning stroke is in Victoria bounding box: {lat}, {lon}", lightningStroke.Latitude, lightningStroke.Longitude);
@@ -115,12 +117,24 @@ namespace Test.AppService.Lightning.API.Services
             return lightningStroke;
         }
 
-        private bool IsInVictoriaBoundingBox(LightningStrokeEntry l)
+        /// <summary>
+        /// Checks if strike is within bounding box (defaults to Victoria if lat/lon aren't configured)
+        /// </summary>
+        /// <param name="l"></param>
+        /// <returns></returns>
+        private bool IsInBoundingBox(LightningStrokeEntry l)
         {
-            return l.Latitude > -39.25
-                && l.Latitude < -33.75
-                && l.Longitude > 140.0
-                && l.Longitude < 150.0 ? true : false;
+            double latMin, latMax, lonMin, lonMax;
+
+            latMin = double.TryParse(_configuration["BoundingBox:latMin"], out latMin) ? latMin : -39.25;
+            latMax = double.TryParse(_configuration["BoundingBox:latMax"], out latMax) ? latMax : -33.75;
+            lonMin = double.TryParse(_configuration["BoundingBox:lonMin"], out lonMin) ? lonMin : 140.0;
+            lonMax = double.TryParse(_configuration["BoundingBox:lonMax"], out lonMax) ? lonMax : 150.0;
+
+            return l.Latitude > latMin
+                && l.Latitude < latMax
+                && l.Longitude > lonMin
+                && l.Longitude < lonMax ? true : false;
         }
 
     }
