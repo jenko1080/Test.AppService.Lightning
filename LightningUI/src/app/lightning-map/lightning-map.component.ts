@@ -16,7 +16,9 @@ import {
   marker,
   LayerGroup,
   icon,
+  rectangle,
 } from 'leaflet';
+import { ConfigService } from '../config.service';
 import { WebSocketService } from '../websocket.service';
 
 @Component({
@@ -65,7 +67,8 @@ export class LightningMapComponent implements OnInit, OnDestroy {
     overlays: {},
   };
 
-  constructor(private webSocketService: WebSocketService) {
+  constructor(private webSocketService: WebSocketService, private configService: ConfigService) {
+    // Start the websocket
     this.webSocketService.status$.subscribe((status) => {
       console.log('WebSocket status: ', status);
       if (status === 'connected') {
@@ -96,6 +99,14 @@ export class LightningMapComponent implements OnInit, OnDestroy {
     this.zoom$.emit(this.zoom);
 
     this.lightningGroup.addTo(this.map);
+
+    // Show the bounding box
+    this.configService.getBoundingBox().subscribe((boundingBox) => {
+      console.log('Bounding box: ', boundingBox);
+      this.map.addLayer(
+        rectangle([[boundingBox.bottomLeft.latitude, boundingBox.bottomLeft.longitude],[boundingBox.topRight.latitude, boundingBox.topRight.longitude]])
+      );
+    });
   }
 
   addLightningStrike(type: string, lat: number, long: number) {

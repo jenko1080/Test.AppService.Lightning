@@ -13,15 +13,17 @@ namespace Test.AppService.Lightning.API.Services
         private readonly ITopicService _topicService;
         private readonly IPubSubService _pubSubService;
         private readonly IConfiguration _configuration;
+        private readonly IConfigService _configService;
 
         // Ctor
-        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService, IPubSubService pubSubService, IConfiguration configuration)
+        public LightningService(ILogger<LightningService> logger, ITablesService tablesService, ITopicService topicService, IPubSubService pubSubService, IConfiguration configuration, IConfigService configService)
         {
             _logger = logger;
             _tablesService = tablesService;
             _topicService = topicService;
             _pubSubService = pubSubService;
             _configuration = configuration;
+            _configService = configService;
         }
 
         // Handle JSON lightning stroke
@@ -124,17 +126,12 @@ namespace Test.AppService.Lightning.API.Services
         /// <returns></returns>
         private bool IsInBoundingBox(LightningStrokeEntry l)
         {
-            double latMin, latMax, lonMin, lonMax;
+            var box = _configService.GetBoundingBox();
 
-            latMin = double.TryParse(_configuration["BoundingBox:latMin"], out latMin) ? latMin : -39.25;
-            latMax = double.TryParse(_configuration["BoundingBox:latMax"], out latMax) ? latMax : -33.75;
-            lonMin = double.TryParse(_configuration["BoundingBox:lonMin"], out lonMin) ? lonMin : 140.0;
-            lonMax = double.TryParse(_configuration["BoundingBox:lonMax"], out lonMax) ? lonMax : 150.0;
-
-            return l.Latitude > latMin
-                && l.Latitude < latMax
-                && l.Longitude > lonMin
-                && l.Longitude < lonMax ? true : false;
+            return l.Latitude > box.BottomLeft.Latitude
+                && l.Latitude < box.TopRight.Longitude
+                && l.Longitude > box.BottomLeft.Latitude
+                && l.Longitude < box.TopRight.Longitude ? true : false;
         }
 
     }

@@ -59,6 +59,7 @@ builder.Services.AddSingleton<ILightningService, LightningService>();
 builder.Services.AddSingleton<ITcpWorkerService, TcpWorkerService>();
 builder.Services.AddSingleton<IWarmupService, WarmupService>();
 builder.Services.AddSingleton<IPubSubService, PubSubService>();
+builder.Services.AddTransient<IConfigService, ConfigService>();
 
 // Add background service
 builder.Services.AddHostedService<TcpBackgroundService>();
