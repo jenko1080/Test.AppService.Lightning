@@ -42,8 +42,15 @@ namespace Test.AppService.Lightning.API.Services
                 {
                     _logger.LogInformation("Lightning feed KeepAlive message recieved");
 
+                    // Construct new slim KeepAlive
+                    var keepAlive = new KeepAliveMessage
+                    {
+                        DateTimeUtc = lightningStroke.DateTimeUtc,
+                        Type = lightningStroke.Type,
+                    };
+
                     // Add to PubSub
-                    await _pubSubService.PublishMessageAsync(JsonSerializer.Serialize(lightningStroke));
+                    await _pubSubService.PublishKeepAliveMessageAsync(keepAlive);
 
                     return;
                 }
@@ -55,7 +62,7 @@ namespace Test.AppService.Lightning.API.Services
                     _logger.LogDebug("Lightning stroke is in Victoria bounding box: {lat}, {lon}", lightningStroke.Latitude, lightningStroke.Longitude);
 
                     // Add to PubSub
-                    await _pubSubService.PublishMessageAsync(JsonSerializer.Serialize(lightningStroke));
+                    await _pubSubService.PublishLightningMessageAsync(lightningStroke);
 
                     // Log to long term table
                     if (await _tablesService.AddToTable(lightningStroke))
