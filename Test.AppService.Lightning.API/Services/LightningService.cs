@@ -124,13 +124,13 @@ namespace Test.AppService.Lightning.API.Services
         /// </summary>
         /// <param name="l"></param>
         /// <returns></returns>
-        private bool IsInBoundingBox(LightningStrokeEntry l)
+        public bool IsInBoundingBox(LightningStrokeEntry l)
         {
             var box = _configService.GetBoundingBox();
 
             return l.Latitude > box.BottomLeft.Latitude
-                && l.Latitude < box.TopRight.Longitude
-                && l.Longitude > box.BottomLeft.Latitude
+                && l.Latitude < box.TopRight.Latitude
+                && l.Longitude > box.BottomLeft.Longitude
                 && l.Longitude < box.TopRight.Longitude ? true : false;
         }
 
