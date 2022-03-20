@@ -17,6 +17,7 @@ import {
   LayerGroup,
   icon,
   rectangle,
+  LatLngBounds,
 } from 'leaflet';
 import { ConfigService } from '../config.service';
 import { WebSocketService } from '../websocket.service';
@@ -103,9 +104,15 @@ export class LightningMapComponent implements OnInit, OnDestroy {
     // Show the bounding box
     this.configService.getBoundingBox().subscribe((boundingBox) => {
       console.log('Bounding box: ', boundingBox);
+      const bounds = new LatLngBounds([[boundingBox.bottomLeft.latitude, boundingBox.bottomLeft.longitude],[boundingBox.topRight.latitude, boundingBox.topRight.longitude]]);
       this.map.addLayer(
-        rectangle([[boundingBox.bottomLeft.latitude, boundingBox.bottomLeft.longitude],[boundingBox.topRight.latitude, boundingBox.topRight.longitude]])
+        rectangle(bounds,
+          {
+            interactive: false,
+            fill: false,
+          })
       );
+      this.map.fitBounds(bounds);
     });
   }
 
@@ -116,7 +123,7 @@ export class LightningMapComponent implements OnInit, OnDestroy {
         icon: icon({
           iconSize: [10, 17],
           iconAnchor: [2, 17],
-          iconUrl: 'assets/bolt.svg',
+          iconUrl: 'assets/bolt.svg'
         })
       });
     }
