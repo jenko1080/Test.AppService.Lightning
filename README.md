@@ -42,3 +42,4 @@ dotnet user-secrets set "ConnectionStrings:ServiceBus" "<ServiceBusConnectionStr
 
 - Update the PubSub implementation to send data every ?ms (batching)
 - Update the Service Bus implementation to send data every ?ms (batching)
+- Make the leaflet implementation more efficient?
