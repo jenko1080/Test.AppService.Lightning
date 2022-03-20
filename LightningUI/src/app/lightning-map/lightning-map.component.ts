@@ -8,17 +8,14 @@ import {
 } from '@angular/core';
 import {
   Map,
-  Control,
-  DomUtil,
-  ZoomAnimEvent,
   Layer,
   MapOptions,
   tileLayer,
   latLng,
   circle,
-  polygon,
   marker,
   LayerGroup,
+  icon,
 } from 'leaflet';
 import { WebSocketService } from '../websocket.service';
 
@@ -76,7 +73,7 @@ export class LightningMapComponent implements OnInit, OnDestroy {
           if (message.st == 'KA') {
             console.log('KA: ', message);
           } else if (message.st === 'CG' || message.st === 'IC') {
-            this.addLightningStrike(message.lat, message.lon);
+            this.addLightningStrike(message.st, message.lat, message.lon);
           } else {
             console.log('Unknown message: ', message);
           }
@@ -101,8 +98,25 @@ export class LightningMapComponent implements OnInit, OnDestroy {
     this.lightningGroup.addTo(this.map);
   }
 
-  addLightningStrike(lat: number, long: number) {
-    const mk = circle([lat, long], 5000);
+  addLightningStrike(type: string, lat: number, long: number) {
+    var mk: Layer;
+    if(type === "CG") {
+      mk = marker([lat, long], {
+        icon: icon({
+          iconSize: [10, 17],
+          iconAnchor: [2, 17],
+          iconUrl: 'assets/bolt.svg',
+        })
+      });
+    }
+    else if(type === "IC") {
+      mk = circle([lat, long], 200);
+    }
+    else{
+      mk = marker([lat, long]);
+      console.log("Unknown type: ", type);
+    }
+    
     console.log('Added marker: ', mk);
     this.lightningGroup.addLayer(mk);
   }
